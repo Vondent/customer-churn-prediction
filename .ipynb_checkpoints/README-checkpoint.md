@@ -1,1 +1,3 @@
 # customer-churn-prediction
+
+This project focuses on predicting customer churn using the Telco Customer Churn dataset from Kaggle. Churn refers to customers who cancel their service, and reducing churn is critical for maintaining long-term business growth—especially in subscription-based models. The dataset includes demographic, account, and service-related information for over 7,000 customers. Through exploratory data analysis (EDA), data cleaning, and visualizations, we identify key factors associated with churn. We then build predictive models to classify whether a customer is likely to churn, using supervised machine learning techniques. The ultimate goal is to generate actionable insights and provide strategies to improve customer retention.
