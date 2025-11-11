@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Flask ML Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+      main { max-width: 960px; margin: 2rem auto; }
+      #chart { height: 420px; }
+      .grid { grid-template-columns: repeat(5, 1fr); gap: .75rem; }
+      input[type="number"] { width: 100%; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h2>Flask Dashboard + ML Prediction</h2>
+
+      <article>
+        <h3>Dashboard</h3>
+        <div id="chart"></div>
+      </article>
+
+      <article>
+        <h3>Try a Prediction</h3>
+        <form id="pred-form">
+          <div class="grid">
+            <label>age <input name="age" type="number" step="any" value="0"></label>
+            <label>sex <input name="sex" type="number" step="any" value="0"></label>
+            <label>bmi <input name="bmi" type="number" step="any" value="0.03"></label>
+            <label>bp  <input name="bp"  type="number" step="any" value="0.02"></label>
+            <label>s1  <input name="s1"  type="number" step="any" value="0.02"></label>
+            <label>s2  <input name="s2"  type="number" step="any" value="0.02"></label>
+            <label>s3  <input name="s3"  type="number" step="any" value="0.02"></label>
+            <label>s4  <input name="s4"  type="number" step="any" value="0.02"></label>
+            <label>s5  <input name="s5"  type="number" step="any" value="0.02"></label>
+            <label>s6  <input name="s6"  type="number" step="any" value="0.02"></label>
+          </div>
+          <button type="submit">Predict</button>
+        </form>
+        <p><strong>Result:</strong> <span id="pred-out">—</span></p>
+      </article>
+    </main>
+
+    <script>
+      // Plotly chart from server JSON
+        const plotData = JSON.parse('{{ graphJSON | safe | tojson | safe }}');
+        Plotly.newPlot('chart', plotData.data, plotData.layout, {responsive: true});
+
+
+      // Handle prediction form
+      const form = document.getElementById('pred-form');
+      const out  = document.getElementById('pred-out');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const res = await fetch('/predict', { method: 'POST', body: fd });
+        const data = await res.json();
+        out.textContent = (data.prediction !== undefined)
+          ? data.prediction.toFixed(3)
+          : data.error;
+      });
+    </script>
+  </body>
+</html>
