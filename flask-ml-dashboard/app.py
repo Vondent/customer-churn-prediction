@@ -5,6 +5,7 @@ import numpy as np
 import joblib
 from pathlib import Path
 import plotly.express as px
+import os
 
 app = Flask(__name__)
 
@@ -21,7 +22,7 @@ df = load_csv()
 
 # -------------------- Model loading (path-robust) --------------------
 BASE_DIR   = Path(__file__).resolve().parent              # flask-ml-dashboard/
-MODEL_PATH = BASE_DIR / "model.pkl"                       # adjust if it's in a subfolder, e.g. BASE_DIR/"models/model.pkl"
+MODEL_PATH = BASE_DIR / "model.pkl"                       # adjust if model lives elsewhere
 
 print(f"🧠 Loading model from: {MODEL_PATH}")
 if not MODEL_PATH.exists():
@@ -46,7 +47,12 @@ else:
 def _coerce_churn(series: pd.Series) -> pd.Series:
     s = series.copy()
     if s.dtype == object:
-        s = s.astype(str).str.strip().str.lower().map({"yes": 1, "no": 0, "true": 1, "false": 0})
+        s = (
+            s.astype(str)
+             .str.strip()
+             .str.lower()
+             .map({"yes": 1, "no": 0, "true": 1, "false": 0})
+        )
     return pd.to_numeric(s, errors="coerce")
 
 def with_bins(dfin: pd.DataFrame) -> pd.DataFrame:
@@ -63,7 +69,7 @@ def with_bins(dfin: pd.DataFrame) -> pd.DataFrame:
             t["Monthly Charges (binned)"] = pd.qcut(
                 pd.to_numeric(t["Monthly Charges"], errors="coerce"),
                 q=5, duplicates="drop"
-            ).astype(str) 
+            ).astype(str)
         except Exception:
             pass
     return t
@@ -91,7 +97,8 @@ def default_figure():
                .sort_values("Churn Rate", ascending=False)
         )
         fig = px.bar(plot_df, x="Contract", y="Churn Rate", title="Churn Rate by Contract")
-        fig.update_yaxes(range=[0, 1])
+        fig.update_yaxes(range=[0, 1], autorange=False, dtick=0.1, tickformat=".0%", title="Churn Rate")
+        fig.update_traces(texttemplate="%{y:.0%}", textposition="auto", cliponaxis=True)
         return fig
     if "Churn" in df.columns:
         tmp = df.copy()
@@ -99,7 +106,8 @@ def default_figure():
         rate = float(tmp["Churn"].mean())
         plot_df = pd.DataFrame({"Metric": ["Overall Churn Rate"], "Value": [rate]})
         fig = px.bar(plot_df, x="Metric", y="Value", title="Overall Churn Rate")
-        fig.update_yaxes(range=[0, 1])
+        fig.update_yaxes(range=[0, 1], autorange=False, dtick=0.1, tickformat=".0%", title="Churn Rate")
+        fig.update_traces(texttemplate="%{y:.0%}", textposition="auto", cliponaxis=True)
         return fig
     counts = df.iloc[:, :10].notna().sum().reset_index()
     counts.columns = ["Column", "Non-Null Count"]
@@ -116,12 +124,18 @@ def index():
 def chart_data():
     """
     Query params:
-      - dim: grouping column (must be in DIM_CHOICES)
+      - dim: grouping column (must be in DIM_CHOICES) or numeric index (0..len-1)
       - metric: 'churn_rate' (default) or 'count'
-    Returns a Plotly figure JSON string (safe for NumPy/Interval types).
+    Returns a Plotly figure JSON string.
     """
     dim = request.args.get("dim")
     metric = request.args.get("metric", "churn_rate")
+
+    # Allow index values from UI (e.g., "0")
+    if dim is not None and dim.isdigit():
+        idx = int(dim)
+        if 0 <= idx < len(DIM_CHOICES):
+            dim = DIM_CHOICES[idx]
 
     if dim not in DIM_CHOICES:
         return jsonify({"error": f"Invalid dim. Choose one of: {DIM_CHOICES}"}), 400
@@ -147,7 +161,12 @@ def chart_data():
         )
         plot_df[dim] = plot_df[dim].fillna("Unknown").astype(str)
         fig = px.bar(plot_df, x=dim, y="Churn Rate", title=f"Churn Rate by {dim}")
-        fig.update_yaxes(range=[0, 1])
+        fig.update_yaxes(range=[0, 1], autorange=False, dtick=0.1, tickformat=".0%", title="Churn Rate")
+        fig.update_traces(texttemplate="%{y:.0%}", textposition="auto", cliponaxis=True)
+
+    # Stable ordering for binned categories (optional)
+    if dim in ("Tenure Months (binned)", "Monthly Charges (binned)"):
+        fig.update_xaxes(categoryorder="array", categoryarray=sorted(plot_df[dim].unique(), key=str))
 
     return Response(fig.to_json(), mimetype="application/json")
 
@@ -173,7 +192,7 @@ def predict():
             "OnlineSecurity": "Online Security",
             "OnlineBackup": "Online Backup",
             "DeviceProtection": "Device Protection",
-            "TechSupport": "Premium Tech Support", 
+            "TechSupport": "Premium Tech Support",
             "StreamingTV": "Streaming TV",
             "StreamingMovies": "Streaming Movies",
             "gender": "Gender",
@@ -181,7 +200,7 @@ def predict():
             "Contract": "Contract",
             "PaymentMethod": "Payment Method",
             "MonthlyCharges": "Monthly Charges",
-            "Tenure": "Tenure Months", 
+            "Tenure": "Tenure Months",
         }
 
         # 2) Value decoders: UI codes -> training labels
@@ -231,14 +250,8 @@ def predict():
                 translated[raw_key] = payload.get(ui_key, None)
 
         # 4) Ensure ALL expected raw columns are present
-        row = []
-        for col in raw_columns:
-            val = translated.get(col, None)
-            row.append(val)
+        row = [translated.get(col, None) for col in raw_columns]
         X = pd.DataFrame([row], columns=raw_columns)
-                
-        #print("RAW payload:", payload)
-        #print("DF for prediction:\n", X.head().to_dict(orient="records"))
 
         # 5) Predict
         if hasattr(model, "predict_proba"):
@@ -268,4 +281,6 @@ def health():
     return jsonify({"status": "ok"})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # useful locally; on Render use gunicorn and $PORT
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)

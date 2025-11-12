@@ -1,248 +1,248 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Customer Churn Prediction</title>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <style>
-    body {
-      background-color: #000;
-      color: #fff;
-      font-family: Arial, Helvetica, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    h1, h2, h3 {
-      text-align: center;
-      color: #00d4ff;
-    }
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    form {
-      background-color: #111;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #0ff;
-    }
-    label {
-      color: #fff;
-    }
-    input[type="checkbox"], input[type="number"], select {
-      margin: 5px;
-    }
-    input[type="number"], select {
-      background-color: #222;
-      color: #fff;
-      border: 1px solid #555;
-      border-radius: 5px;
-      padding: 5px;
-    }
-    button {
-      background-color: #00d4ff;
-      border: none;
-      color: black;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    button:hover {
-      background-color: #00aacc;
-    }
-    #chart {
-      height: 400px;
-      margin-top: 30px;
-      border: 1px solid #333;
-      border-radius: 10px;
-      background-color: #111;
-    }
-    #result {
-      margin-top: 20px;
-      text-align: center;
-      font-size: 1.2rem;
-      color: #00ff88;
-    }
-    hr {
-      border: 1px solid #333;
-      margin: 30px 0;
-    }
-  </style>
-</head>
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Customer Churn Prediction</title>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <style>
+      body {
+        background-color: #000;
+        color: #fff;
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+      h1, h2, h3 {
+        text-align: center;
+        color: #00d4ff;
+      }
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      form {
+        background-color: #111;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px #0ff;
+      }
+      label {
+        color: #fff;
+      }
+      input[type="checkbox"], input[type="number"], select {
+        margin: 5px;
+      }
+      input[type="number"], select {
+        background-color: #222;
+        color: #fff;
+        border: 1px solid #555;
+        border-radius: 5px;
+        padding: 5px;
+      }
+      button {
+        background-color: #00d4ff;
+        border: none;
+        color: black;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      button:hover {
+        background-color: #00aacc;
+      }
+      #chart {
+        height: 400px;
+        margin-top: 30px;
+        border: 1px solid #333;
+        border-radius: 10px;
+        background-color: #111;
+      }
+      #result {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 1.2rem;
+        color: #00ff88;
+      }
+      hr {
+        border: 1px solid #333;
+        margin: 30px 0;
+      }
+    </style>
+  </head>
 
-<body>
-  <div class="container">
-    <h1>Customer Churn Prediction Dashboard</h1>
-    <h4 style="text-align:center; color:#ccc;">By Vincent Luong</h4>
+  <body>
+    <div class="container">
+      <h1>Customer Churn Prediction Dashboard</h1>
+      <h4 style="text-align:center; color:#ccc;">By Vincent Luong</h4>
 
-    <!-- ----------- Chart Controls ----------- -->
-    <div style="display:flex; gap:12px; align-items:center; justify-content:center; margin:12px 0;">
-      <label>Feature:
-        <select id="dim-select">
-          {% for d in dim_choices %}
-            <option value="{{ d }}">{{ d }}</option>
-          {% endfor %}
-        </select>
-      </label>
+      <!-- ----------- Chart Controls ----------- -->
+      <div style="display:flex; gap:12px; align-items:center; justify-content:center; margin:12px 0;">
+        <label>Feature:
+          <select id="dim-select">
+            {% for d in dim_choices %}
+              <option value="{{ d }}">{{ d }}</option>
+            {% endfor %}
+          </select>
+        </label>
 
-      <label>Metric:
-        <select id="metric-select">
-          <option value="churn_rate" selected>Churn Rate</option>
-          <option value="count">Count</option>
-        </select>
-      </label>
+        <label>Metric:
+          <select id="metric-select">
+            <option value="churn_rate" selected>Churn Rate</option>
+            <option value="count">Count</option>
+          </select>
+        </label>
 
-      <button id="update-btn">Update</button>
+        <button id="update-btn">Update</button>
+      </div>
+
+      <!-- ----------- Chart Section ----------- -->
+      <div id="chart"></div>
+
+      <hr>
+
+      <!-- ----------- Prediction Form ----------- -->
+      <h2>Insert a Prediction</h2>
+      <form id="pred-form">
+        <div>
+          <input type="checkbox" id="SeniorCitizen" name="SeniorCitizen" value="1">
+          <label for="SeniorCitizen">Senior Citizen</label>
+          <input type="checkbox" id="Partner" name="Partner" value="1">
+          <label for="Partner">Has Partner</label>
+          <input type="checkbox" id="Dependents" name="Dependents" value="1">
+          <label for="Dependents">Dependents</label>
+          <input type="checkbox" id="PaperlessBilling" name="PaperlessBilling" value="1">
+          <label for="PaperlessBilling">Paperless Billing</label>
+          <input type="checkbox" id="PhoneService" name="PhoneService" value="1">
+          <label for="PhoneService">Phone Service</label>
+          <input type="checkbox" id="MultipleLines" name="MultipleLines" value="1">
+          <label for="MultipleLines">Multiple Lines</label>
+        </div>
+        <br>
+
+        <div>
+          <input type="checkbox" id="OnlineSecurity" name="OnlineSecurity" value="1">
+          <label for="OnlineSecurity">Online Security</label>
+          <input type="checkbox" id="OnlineBackup" name="OnlineBackup" value="1">
+          <label for="OnlineBackup">Online Backup</label>
+          <input type="checkbox" id="DeviceProtection" name="DeviceProtection" value="1">
+          <label for="DeviceProtection">Device Protection</label>
+          <input type="checkbox" id="TechSupport" name="TechSupport" value="1">
+          <label for="TechSupport">Tech Support</label>
+          <input type="checkbox" id="StreamingTV" name="StreamingTV" value="1">
+          <label for="StreamingTV">Streaming TV</label>
+          <input type="checkbox" id="StreamingMovies" name="StreamingMovies" value="1">
+          <label for="StreamingMovies">Streaming Movies</label>
+        </div>
+        <br>
+
+        <div>
+          <label for="gender">Gender:</label>
+          <select id="gender" name="gender">
+            <option value="0">Male</option>
+            <option value="1">Female</option>
+          </select>
+
+          <label for="InternetService">Internet:</label>
+          <select id="InternetService" name="InternetService">
+            <option value="0">No</option>
+            <option value="1">DSL</option>
+            <option value="2">Fiber optic</option>
+          </select>
+
+          <label for="Contract">Contract:</label>
+          <select id="Contract" name="Contract">
+            <option value="0">Month-to-Month</option>
+            <option value="1">One-Year</option>
+            <option value="2">Two-Year</option>
+          </select>
+
+          <label for="PaymentMethod">Payment:</label>
+          <select id="PaymentMethod" name="PaymentMethod">
+            <option value="0">Automatic Bank Transfer</option>
+            <option value="1">Automatic Credit Card</option>
+            <option value="2">Electronic Check</option>
+            <option value="3">Mailed Check</option>
+          </select>
+        </div>
+        <br>
+
+        <div>
+          <input type="number" name="MonthlyCharges" placeholder="Monthly Charges" min="0" required>
+          <input type="number" name="Tenure" placeholder="Tenure in Months" min="0" required>
+        </div>
+        <br>
+
+        <button type="submit">Predict</button>
+      </form>
+
+      <!-- ----------- Result Section ----------- -->
+      <div id="result">
+        <strong>Prediction:</strong> <span id="pred-out">—</span>
+        <p style="margin-top:10px; font-size:0.95rem; color:#ccc; text-align:center;">
+          <em>
+            This score represents the model's estimated probability that a customer will churn
+            (i.e., discontinue their service).<br>
+            Values close to <strong>1.0</strong> indicate a high likelihood of churn, while values
+            near <strong>0.0</strong> suggest the customer is likely to stay.
+          </em>
+        </p>
+      </div>
     </div>
 
-    <!-- ----------- Chart Section ----------- -->
-    <div id="chart"></div>
+    <script>
+      const initialFig = JSON.parse('{{ graphJSON | safe }}');
+      Plotly.newPlot('chart', initialFig.data, initialFig.layout, {responsive: true});
 
-    <hr>
+      async function refreshChart() {
+        const dim = document.getElementById('dim-select').value;
+        const metric = document.getElementById('metric-select').value;
 
-    <!-- ----------- Prediction Form ----------- -->
-    <h2>Insert a Prediction</h2>
-    <form id="pred-form">
-      <div>
-        <input type="checkbox" id="SeniorCitizen" name="SeniorCitizen" value="1">
-        <label for="SeniorCitizen">Senior Citizen</label>
-        <input type="checkbox" id="Partner" name="Partner" value="1">
-        <label for="Partner">Has Partner</label>
-        <input type="checkbox" id="Dependents" name="Dependents" value="1">
-        <label for="Dependents">Dependents</label>
-        <input type="checkbox" id="PaperlessBilling" name="PaperlessBilling" value="1">
-        <label for="PaperlessBilling">Paperless Billing</label>
-        <input type="checkbox" id="PhoneService" name="PhoneService" value="1">
-        <label for="PhoneService">Phone Service</label>
-        <input type="checkbox" id="MultipleLines" name="MultipleLines" value="1">
-        <label for="MultipleLines">Multiple Lines</label>
-      </div>
-      <br>
-
-      <div>
-        <input type="checkbox" id="OnlineSecurity" name="OnlineSecurity" value="1">
-        <label for="OnlineSecurity">Online Security</label>
-        <input type="checkbox" id="OnlineBackup" name="OnlineBackup" value="1">
-        <label for="OnlineBackup">Online Backup</label>
-        <input type="checkbox" id="DeviceProtection" name="DeviceProtection" value="1">
-        <label for="DeviceProtection">Device Protection</label>
-        <input type="checkbox" id="TechSupport" name="TechSupport" value="1">
-        <label for="TechSupport">Tech Support</label>
-        <input type="checkbox" id="StreamingTV" name="StreamingTV" value="1">
-        <label for="StreamingTV">Streaming TV</label>
-        <input type="checkbox" id="StreamingMovies" name="StreamingMovies" value="1">
-        <label for="StreamingMovies">Streaming Movies</label>
-      </div>
-      <br>
-
-      <div>
-        <label for="gender">Gender:</label>
-        <select id="gender" name="gender">
-          <option value="0">Male</option>
-          <option value="1">Female</option>
-        </select>
-
-        <label for="InternetService">Internet:</label>
-        <select id="InternetService" name="InternetService">
-          <option value="0">No</option>
-          <option value="1">DSL</option>
-          <option value="2">Fiber optic</option>
-        </select>
-
-        <label for="Contract">Contract:</label>
-        <select id="Contract" name="Contract">
-          <option value="0">Month-to-Month</option>
-          <option value="1">One-Year</option>
-          <option value="2">Two-Year</option>
-        </select>
-
-        <label for="PaymentMethod">Payment:</label>
-        <select id="PaymentMethod" name="PaymentMethod">
-          <option value="0">Automatic Bank Transfer</option>
-          <option value="1">Automatic Credit Card</option>
-          <option value="2">Electronic Check</option>
-          <option value="3">Mailed Check</option>
-        </select>
-      </div>
-      <br>
-
-      <div>
-        <input type="number" name="MonthlyCharges" placeholder="Monthly Charges" min="0" required>
-        <input type="number" name="Tenure" placeholder="Tenure in Months" min="0" required>
-      </div>
-      <br>
-
-      <button type="submit">Predict</button>
-    </form>
-
-    <!-- ----------- Result Section ----------- -->
-    <div id="result">
-      <strong>Prediction:</strong> <span id="pred-out">—</span>
-      <p style="margin-top:10px; font-size:0.95rem; color:#ccc; text-align:center;">
-        <em>
-          This score represents the model's estimated probability that a customer will churn
-          (i.e., discontinue their service).<br>
-          Values close to <strong>1.0</strong> indicate a high likelihood of churn, while values
-          near <strong>0.0</strong> suggest the customer is likely to stay.
-        </em>
-      </p>
-    </div>
-  </div>
-
-  <script>
-    const initialFig = JSON.parse('{{ graphJSON | safe }}');
-    Plotly.newPlot('chart', initialFig.data, initialFig.layout, {responsive: true});
-
-    async function refreshChart() {
-      const dim = document.getElementById('dim-select').value;
-      const metric = document.getElementById('metric-select').value;
-
-      const url = `/chart-data?dim=${encodeURIComponent(dim)}&metric=${encodeURIComponent(metric)}`;
-      const res = await fetch(url);
-      const fig = await res.json();
-      if (fig.error) {
-        console.error(fig.error);
-        return;
-      }
-      Plotly.react('chart', fig.data, fig.layout, {responsive: true});
-    }
-
-    document.getElementById('update-btn').addEventListener('click', refreshChart);
-    document.getElementById('dim-select').addEventListener('change', refreshChart);
-    document.getElementById('metric-select').addEventListener('change', refreshChart);
-
-    const form = document.getElementById('pred-form');
-    const out = document.getElementById('pred-out');
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const fd = new FormData(form);
-      const payload = {};
-      for (const [k, v] of fd.entries()) {
-        payload[k] = v;
-      }
-
-      try {
-        const res = await fetch('/predict', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.prediction !== undefined) {
-          const value = typeof data.prediction === 'number'
-            ? data.prediction.toFixed(4)
-            : data.prediction;
-          out.textContent = value;
-        } else {
-          out.textContent = data.error || 'Prediction error';
+        const url = `/chart-data?dim=${encodeURIComponent(dim)}&metric=${encodeURIComponent(metric)}`;
+        const res = await fetch(url);
+        const fig = await res.json();
+        if (fig.error) {
+          console.error(fig.error);
+          return;
         }
-      } catch (err) {
-        out.textContent = 'Request failed: ' + err;
+        Plotly.react('chart', fig.data, fig.layout, {responsive: true});
       }
-    });
-  </script>
-</body>
-</html>
+
+      document.getElementById('update-btn').addEventListener('click', refreshChart);
+      document.getElementById('dim-select').addEventListener('change', refreshChart);
+      document.getElementById('metric-select').addEventListener('change', refreshChart);
+
+      const form = document.getElementById('pred-form');
+      const out = document.getElementById('pred-out');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const fd = new FormData(form);
+        const payload = {};
+        for (const [k, v] of fd.entries()) {
+          payload[k] = v;
+        }
+
+        try {
+          const res = await fetch('/predict', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.prediction !== undefined) {
+            const value = typeof data.prediction === 'number'
+              ? data.prediction.toFixed(4)
+              : data.prediction;
+            out.textContent = value;
+          } else {
+            out.textContent = data.error || 'Prediction error';
+          }
+        } catch (err) {
+          out.textContent = 'Request failed: ' + err;
+        }
+      });
+    </script>
+  </body>
+  </html>
