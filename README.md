@@ -15,8 +15,7 @@ The ultimate goal is to generate **actionable insights** and provide **strategie
 
 **App:** [https://customer-churn-prediction-1dmu.onrender.com](https://customer-churn-prediction-1dmu.onrender.com)
 
-An interactive **Flask + Plotly** web application that predicts customer churn and visualizes churn trends across different customer segments.  
-Built and maintained by **Vincent Luong**.
+An interactive **Flask + Plotly** web application that predicts customer churn and visualizes churn trends across different customer segments.
 
 ---
 
@@ -38,6 +37,7 @@ Built and maintained by **Vincent Luong**.
 customer-churn-prediction/
 │
 ├── flask-ml-dashboard/
+│   ├── .gitignore              
 │   ├── app.py                  # Main Flask application
 │   ├── model.pkl               # Trained ML model (joblib serialized)
 │   ├── requirements.txt        # Python dependencies
@@ -51,5 +51,4 @@ customer-churn-prediction/
 │
 ├── customer-churn-analysis/    # Exploratory data analysis & model training
 ├── shap_force_top_instance.html # SHAP force plot visualization
-├── README.md                   # Project documentation
-└── .gitignore
+└── README.md                   # Project documentation
