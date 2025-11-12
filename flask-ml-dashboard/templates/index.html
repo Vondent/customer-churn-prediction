@@ -94,7 +94,6 @@
           </select>
         </label>
 
-        <button id="update-btn">Update</button>
       </div>
 
       <!-- ----------- Chart Section ----------- -->
@@ -209,7 +208,6 @@
         Plotly.react('chart', fig.data, fig.layout, {responsive: true});
       }
 
-      document.getElementById('update-btn').addEventListener('click', refreshChart);
       document.getElementById('dim-select').addEventListener('change', refreshChart);
       document.getElementById('metric-select').addEventListener('change', refreshChart);
 
