@@ -144,23 +144,93 @@ def chart_data():
 @app.route("/predict", methods=["POST"])
 def predict():
     """
-    Accepts JSON or form-data with keys equal to the Pipeline's raw input columns.
-    Numeric values may be strings; we coerce when possible. Missing values allowed.
-    Returns probability of churn when available (preferred).
+    Accepts JSON or form-data from the current UI, translates it to the
+    raw training schema (names + string labels), then predicts.
     """
     try:
         payload = request.get_json(silent=True)
         if payload is None:
             payload = request.form.to_dict()
+
+        # 1) UI field name -> raw column name mapping
+        name_map = {
+            "SeniorCitizen": "Senior Citizen",
+            "Partner": "Partner",
+            "Dependents": "Dependents",
+            "PaperlessBilling": "Paperless Billing",
+            "PhoneService": "Phone Service",
+            "MultipleLines": "Multiple Lines",
+            "OnlineSecurity": "Online Security",
+            "OnlineBackup": "Online Backup",
+            "DeviceProtection": "Device Protection",
+            "TechSupport": "Premium Tech Support", 
+            "StreamingTV": "Streaming TV",
+            "StreamingMovies": "Streaming Movies",
+            "gender": "Gender",
+            "InternetService": "Internet Service",
+            "Contract": "Contract",
+            "PaymentMethod": "Payment Method",
+            "MonthlyCharges": "Monthly Charges",
+            "Tenure": "Tenure Months", 
+        }
+
+        # 2) Value decoders: UI codes -> training labels
+        contract_map = {
+            "0": "Month-to-month", "1": "One year", "2": "Two year",
+            0: "Month-to-month", 1: "One year", 2: "Two year",
+        }
+        internet_map = {
+            "0": "No", "1": "DSL", "2": "Fiber optic",
+            0: "No", 1: "DSL", 2: "Fiber optic",
+        }
+        payment_map = {
+            "0": "Bank transfer (automatic)",
+            "1": "Credit card (automatic)",
+            "2": "Electronic check",
+            "3": "Mailed check",
+            0: "Bank transfer (automatic)",
+            1: "Credit card (automatic)",
+            2: "Electronic check",
+            3: "Mailed check",
+        }
+        gender_map = {"0": "Male", "1": "Female", 0: "Male", 1: "Female"}
+
+        checkbox_keys = {
+            "SeniorCitizen", "Partner", "Dependents", "PaperlessBilling",
+            "PhoneService", "MultipleLines", "OnlineSecurity", "OnlineBackup",
+            "DeviceProtection", "TechSupport", "StreamingTV", "StreamingMovies"
+        }
+
+        # 3) Build translated dict in terms of raw column names
+        translated = {}
+        for ui_key, raw_key in name_map.items():
+            if ui_key in checkbox_keys:
+                translated[raw_key] = "Yes" if payload.get(ui_key) else "No"
+            elif ui_key == "Contract":
+                translated[raw_key] = contract_map.get(payload.get(ui_key), None)
+            elif ui_key == "InternetService":
+                translated[raw_key] = internet_map.get(payload.get(ui_key), None)
+            elif ui_key == "PaymentMethod":
+                translated[raw_key] = payment_map.get(payload.get(ui_key), None)
+            elif ui_key == "gender":
+                translated[raw_key] = gender_map.get(payload.get(ui_key), None)
+            elif ui_key in ("MonthlyCharges", "Tenure"):
+                v = payload.get(ui_key)
+                translated[raw_key] = float(v) if v not in (None, "", "None") else None
+            else:
+                translated[raw_key] = payload.get(ui_key, None)
+
+        # 4) Ensure ALL expected raw columns are present
         row = []
         for col in raw_columns:
-            val = payload.get(col, None)
-            try:
-                row.append(float(val))
-            except (TypeError, ValueError):
-                row.append(None if val in ("", None) else str(val))
+            val = translated.get(col, None)
+            row.append(val)
         X = pd.DataFrame([row], columns=raw_columns)
+                
+        #print("RAW payload:", payload)
+        #print("DF for prediction:\n", X.head().to_dict(orient="records"))
 
+        # 5) Predict
         if hasattr(model, "predict_proba"):
             prob = float(model.predict_proba(X)[0][1])
             return jsonify({"prediction_type": "probability", "prediction": prob})
