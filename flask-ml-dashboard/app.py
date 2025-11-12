@@ -19,15 +19,25 @@ def load_csv() -> pd.DataFrame:
 
 df = load_csv()
 
-# -------------------- Model loading --------------------
-_saved = joblib.load("model.pkl")
+# -------------------- Model loading (path-robust) --------------------
+BASE_DIR   = Path(__file__).resolve().parent              # flask-ml-dashboard/
+MODEL_PATH = BASE_DIR / "model.pkl"                       # adjust if it's in a subfolder, e.g. BASE_DIR/"models/model.pkl"
+
+print(f"🧠 Loading model from: {MODEL_PATH}")
+if not MODEL_PATH.exists():
+    raise FileNotFoundError(
+        f"model.pkl not found at {MODEL_PATH}. "
+        "Ensure it’s committed to the repo (in flask-ml-dashboard/) or update MODEL_PATH."
+    )
+
+_saved = joblib.load(MODEL_PATH)
 if isinstance(_saved, dict) and "model" in _saved:
-    model = _saved["model"]
+    model       = _saved["model"]
     raw_columns = _saved.get("columns", [])
     input_type  = _saved.get("input_type", "raw")
     target_name = _saved.get("target", "Churn")
 else:
-    model = _saved
+    model       = _saved
     target_name = "Churn" if "Churn" in df.columns else df.columns[-1]
     raw_columns = [c for c in df.columns if c != target_name]
     input_type  = "raw"
